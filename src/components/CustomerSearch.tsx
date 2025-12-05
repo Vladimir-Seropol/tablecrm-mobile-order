@@ -62,7 +62,6 @@ const CustomerSearch: React.FC = () => {
         setFilteredCustomers(customersResponse.data);
         setTotalCustomers(customersResponse.total);
         setHasMore(customersResponse.hasMore);
-
       } catch (error) {
         console.error("Error fetching customers:", error);
       } finally {
@@ -247,7 +246,16 @@ const CustomerSearch: React.FC = () => {
               </IconButton>
               <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                 <PersonIcon sx={{ mr: 1, color: "primary.main" }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: "bold",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    maxWidth: "100%", 
+                  }}
+                >
                   {customer.name}
                 </Typography>
               </Box>
