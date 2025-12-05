@@ -60,8 +60,6 @@ const OrderForm: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<"create" | "create_conduct">("create");
-
-  // Используем useRef для отслеживания текущего состояния обработки
   const isProcessingRef = useRef(false);
 
   useEffect(() => {
@@ -154,9 +152,8 @@ const OrderForm: React.FC = () => {
     navigate("/");
   };
 
-  // Используем useCallback для мемоизации функции
   const handleCreateSale = useCallback(async (conduct: boolean) => {
-    // Защита от двойного вызова
+
     if (isProcessingRef.current) {
       console.warn("Продажа уже обрабатывается");
       return;
@@ -179,43 +176,60 @@ const OrderForm: React.FC = () => {
     setIsProcessing(true);
 
     const payload = {
-      customer_id: customer.id,
-      warehouse_id: warehouse.id,
-      paybox_id: paybox.id,
-      organization_id: organization.id,
-      price_type_id: priceType.id,
-      items: items.map((item) => ({
-        product_id: item.product.id,
-        quantity: item.quantity,
-        price: item.product.price || 0,
-      })),
-    };
+    customer_id: customer.id,
+    warehouse_id: warehouse.id,
+    paybox_id: paybox.id,
+    organization_id: organization.id,
+    price_type_id: priceType.id, 
+    items: items.map((item) => ({
+      product_id: item.product.id,
+      quantity: item.quantity,
+      price: item.product.price || 0,
+    })),
+  };
 
     try {
-      await apiService.createSale(payload, conduct);
-      clearOrder();
-      setActiveStep(0);
-      toast.success(`Продажа успешно ${conduct ? 'создана и проведена' : 'создана'}!`);
-    } catch (error: any) {
-      console.error("Error creating sale:", error);
+
+    await apiService.createSale(payload, conduct);
+    clearOrder();
+    setActiveStep(0);
+    toast.success(`Продажа успешно ${conduct ? 'создана и проведена' : 'создана'}!`);
+  } catch (error: any) {
+    console.error("Error creating sale:", error);
+    
+    let errorMessage = "Ошибка создания продажи";
+
+    if (error.response?.data?.detail) {
+      const errorDetails = error.response.data.detail;
       
-      let errorMessage = "Ошибка создания продажи";
-      if (error.response?.data?.message) {
-        errorMessage += `: ${error.response.data.message}`;
-      } else if (error.message) {
-        errorMessage += `: ${error.message}`;
-      }
-      
-      toast.error(errorMessage);
-    } finally {
-      setIsProcessing(false);
-      isProcessingRef.current = false;
-      setConfirmDialogOpen(false);
+      errorMessage += ": ";
+      const errors = errorDetails.map((detail: any, index: number) => {
+        let msg = detail.msg;
+        if (detail.loc && detail.loc.length > 0) {
+          const fieldPath = detail.loc.join(".");
+          msg += ` (поле: ${fieldPath})`;
+        }
+        return `${index + 1}. ${msg}`;
+      });
+
+      errorMessage += errors.join("; ");
+    } else if (error.response?.data?.message) {
+      errorMessage += `: ${error.response.data.message}`;
+    } else if (error.message) {
+      errorMessage += `: ${error.message}`;
+    } else {
+      errorMessage += ": Неизвестная ошибка";
     }
-  }, [apiService, customer, warehouse, paybox, organization, priceType, items, clearOrder]);
+    
+    toast.error(errorMessage);
+  } finally {
+    setIsProcessing(false);
+    isProcessingRef.current = false;
+    setConfirmDialogOpen(false);
+  }
+}, [apiService, customer, warehouse, paybox, organization, priceType, items, clearOrder]);
 
   const handleCreateButtonClick = (conduct: boolean) => {
-    // Устанавливаем действие и открываем диалог подтверждения
     setPendingAction(conduct ? "create_conduct" : "create");
     setConfirmDialogOpen(true);
   };
