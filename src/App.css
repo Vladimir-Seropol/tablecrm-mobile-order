@@ -1,0 +1,31 @@
+/* src/App.css */
+.App {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 600px) {
+  .MuiContainer-root {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  
+  .MuiPaper-root {
+    margin: 8px;
+  }
+}
+
+/* Улучшение скролла на мобильных */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Убираем подсветку при тапе на мобильных */
+@media (hover: none) and (pointer: coarse) {
+  button, 
+  [role="button"] {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
