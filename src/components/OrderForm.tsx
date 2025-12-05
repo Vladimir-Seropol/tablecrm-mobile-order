@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Container,
@@ -14,6 +14,10 @@ import {
   ListItemText,
   Alert,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
 import { useOrder } from "../contexts/OrderContext";
@@ -53,6 +57,12 @@ const OrderForm: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
   const [loadingError, setLoadingError] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"create" | "create_conduct">("create");
+
+  // Используем useRef для отслеживания текущего состояния обработки
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     if (token) {
@@ -124,7 +134,6 @@ const OrderForm: React.FC = () => {
       return;
     }
 
-
     if (activeStep === 0) {
       if (!customer) {
         toast.error("Выберите или введите данные клиента");
@@ -145,7 +154,14 @@ const OrderForm: React.FC = () => {
     navigate("/");
   };
 
-  const handleCreateSale = async (conduct: boolean) => {
+  // Используем useCallback для мемоизации функции
+  const handleCreateSale = useCallback(async (conduct: boolean) => {
+    // Защита от двойного вызова
+    if (isProcessingRef.current) {
+      console.warn("Продажа уже обрабатывается");
+      return;
+    }
+
     if (
       !apiService ||
       !customer ||
@@ -158,6 +174,9 @@ const OrderForm: React.FC = () => {
       toast.error("Заполните все обязательные поля");
       return;
     }
+
+    isProcessingRef.current = true;
+    setIsProcessing(true);
 
     const payload = {
       customer_id: customer.id,
@@ -176,11 +195,38 @@ const OrderForm: React.FC = () => {
       await apiService.createSale(payload, conduct);
       clearOrder();
       setActiveStep(0);
-      toast.success("Продажа успешно создана!");
-    } catch (error) {
+      toast.success(`Продажа успешно ${conduct ? 'создана и проведена' : 'создана'}!`);
+    } catch (error: any) {
       console.error("Error creating sale:", error);
-      toast.error("Ошибка создания продажи");
+      
+      let errorMessage = "Ошибка создания продажи";
+      if (error.response?.data?.message) {
+        errorMessage += `: ${error.response.data.message}`;
+      } else if (error.message) {
+        errorMessage += `: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
+      isProcessingRef.current = false;
+      setConfirmDialogOpen(false);
     }
+  }, [apiService, customer, warehouse, paybox, organization, priceType, items, clearOrder]);
+
+  const handleCreateButtonClick = (conduct: boolean) => {
+    // Устанавливаем действие и открываем диалог подтверждения
+    setPendingAction(conduct ? "create_conduct" : "create");
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmAction = () => {
+    const conduct = pendingAction === "create_conduct";
+    handleCreateSale(conduct);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setConfirmDialogOpen(false);
   };
 
   const getStepContent = (step: number) => {
@@ -395,8 +441,9 @@ const OrderForm: React.FC = () => {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={() => handleCreateSale(false)}
+                onClick={() => handleCreateButtonClick(false)}
                 disabled={
+                  isProcessing ||
                   !customer ||
                   !warehouse ||
                   !paybox ||
@@ -405,13 +452,18 @@ const OrderForm: React.FC = () => {
                   items.length === 0
                 }
               >
-                Создать продажу
+                {isProcessing && pendingAction === "create" ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Создать продажу"
+                )}
               </Button>
               <Button
                 variant="contained"
                 color="secondary"
-                onClick={() => handleCreateSale(true)}
+                onClick={() => handleCreateButtonClick(true)}
                 disabled={
+                  isProcessing ||
                   !customer ||
                   !warehouse ||
                   !paybox ||
@@ -420,7 +472,11 @@ const OrderForm: React.FC = () => {
                   items.length === 0
                 }
               >
-                Создать и провести
+                {isProcessing && pendingAction === "create_conduct" ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Создать и провести"
+                )}
               </Button>
             </Box>
           ) : (
@@ -438,6 +494,40 @@ const OrderForm: React.FC = () => {
           )}
         </Box>
       </Box>
+
+      {/* Диалог подтверждения */}
+      <Dialog open={confirmDialogOpen} onClose={handleCloseConfirmDialog}>
+        <DialogTitle>Подтверждение</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {pendingAction === "create_conduct" 
+              ? "Вы уверены, что хотите создать и провести продажу?" 
+              : "Вы уверены, что хотите создать продажу?"}
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+            После подтверждения будет создана продажа{ pendingAction === "create_conduct" && " и проведена" }.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirmDialog} disabled={isProcessing}>
+            Отмена
+          </Button>
+          <Button 
+            onClick={handleConfirmAction} 
+            variant="contained" 
+            disabled={isProcessing}
+            color={pendingAction === "create_conduct" ? "secondary" : "primary"}
+          >
+            {isProcessing ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : pendingAction === "create_conduct" ? (
+              "Создать и провести"
+            ) : (
+              "Создать"
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

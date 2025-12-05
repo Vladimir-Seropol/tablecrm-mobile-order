@@ -40,7 +40,6 @@ class ApiService {
     
     const userData = response.data?.result || response.data;
     
-    console.log('User data from API:', userData); // Для отладки
     return userData;
   } catch (error: any) {
     console.error('Error fetching user data:', error);
@@ -136,20 +135,42 @@ class ApiService {
     }
   }
 
-  async createSale(payload: any, conduct: boolean = false) {
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/docs_sales/`,
-        { ...payload, conduct },
-        { params: this.params }
-      );
-      toast.success('Продажа успешно создана');
-      return response.data;
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Ошибка создания продажи');
-      throw error;
-    }
+ async createSale(payload: any, conduct: boolean = false) {
+  try {
+    console.log("Отправка данных на сервер:", payload);
+    
+    // Подготовка данных
+    const requestData = {
+      customer_id: payload.customer_id,
+      warehouse_id: payload.warehouse_id,
+      paybox_id: payload.paybox_id,
+      organization_id: payload.organization_id,
+      price_type_id: payload.price_type_id,
+      items: payload.items,
+      conduct: conduct
+    };
+
+    console.log("Данные для отправки:", requestData);
+
+    const response = await axios.post(
+      `${API_BASE_URL}/docs_sales/`,
+      requestData,
+      { 
+        params: this.params,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+    
+    console.log("Ответ сервера:", response.data);
+    
+    toast.success('Продажа успешно создана');
+    return response.data;
+  } catch (error: any) {
+    // Обработка ошибок...
   }
+}
 }
 
 export default ApiService;
