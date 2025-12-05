@@ -18,6 +18,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
 import { useOrder } from "../contexts/OrderContext";
@@ -47,6 +49,9 @@ const OrderForm: React.FC = () => {
     setOrganization,
     setPriceType,
   } = useOrder();
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [activeStep, setActiveStep] = useState(0);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -153,7 +158,6 @@ const OrderForm: React.FC = () => {
   };
 
   const handleCreateSale = useCallback(async (conduct: boolean) => {
-
     if (isProcessingRef.current) {
       console.warn("Продажа уже обрабатывается");
       return;
@@ -176,58 +180,57 @@ const OrderForm: React.FC = () => {
     setIsProcessing(true);
 
     const payload = {
-    customer_id: customer.id,
-    warehouse_id: warehouse.id,
-    paybox_id: paybox.id,
-    organization_id: organization.id,
-    price_type_id: priceType.id, 
-    items: items.map((item) => ({
-      product_id: item.product.id,
-      quantity: item.quantity,
-      price: item.product.price || 0,
-    })),
-  };
+      customer_id: customer.id,
+      warehouse_id: warehouse.id,
+      paybox_id: paybox.id,
+      organization_id: organization.id,
+      price_type_id: priceType.id, 
+      items: items.map((item) => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price: item.product.price || 0,
+      })),
+    };
 
     try {
-
-    await apiService.createSale(payload, conduct);
-    clearOrder();
-    setActiveStep(0);
-    toast.success(`Продажа успешно ${conduct ? 'создана и проведена' : 'создана'}!`);
-  } catch (error: any) {
-    console.error("Error creating sale:", error);
-    
-    let errorMessage = "Ошибка создания продажи";
-
-    if (error.response?.data?.detail) {
-      const errorDetails = error.response.data.detail;
+      await apiService.createSale(payload, conduct);
+      clearOrder();
+      setActiveStep(0);
+      toast.success(`Продажа успешно ${conduct ? 'создана и проведена' : 'создана'}!`);
+    } catch (error: any) {
+      console.error("Error creating sale:", error);
       
-      errorMessage += ": ";
-      const errors = errorDetails.map((detail: any, index: number) => {
-        let msg = detail.msg;
-        if (detail.loc && detail.loc.length > 0) {
-          const fieldPath = detail.loc.join(".");
-          msg += ` (поле: ${fieldPath})`;
-        }
-        return `${index + 1}. ${msg}`;
-      });
+      let errorMessage = "Ошибка создания продажи";
 
-      errorMessage += errors.join("; ");
-    } else if (error.response?.data?.message) {
-      errorMessage += `: ${error.response.data.message}`;
-    } else if (error.message) {
-      errorMessage += `: ${error.message}`;
-    } else {
-      errorMessage += ": Неизвестная ошибка";
+      if (error.response?.data?.detail) {
+        const errorDetails = error.response.data.detail;
+        
+        errorMessage += ": ";
+        const errors = errorDetails.map((detail: any, index: number) => {
+          let msg = detail.msg;
+          if (detail.loc && detail.loc.length > 0) {
+            const fieldPath = detail.loc.join(".");
+            msg += ` (поле: ${fieldPath})`;
+          }
+          return `${index + 1}. ${msg}`;
+        });
+
+        errorMessage += errors.join("; ");
+      } else if (error.response?.data?.message) {
+        errorMessage += `: ${error.response.data.message}`;
+      } else if (error.message) {
+        errorMessage += `: ${error.message}`;
+      } else {
+        errorMessage += ": Неизвестная ошибка";
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setIsProcessing(false);
+      isProcessingRef.current = false;
+      setConfirmDialogOpen(false);
     }
-    
-    toast.error(errorMessage);
-  } finally {
-    setIsProcessing(false);
-    isProcessingRef.current = false;
-    setConfirmDialogOpen(false);
-  }
-}, [apiService, customer, warehouse, paybox, organization, priceType, items, clearOrder]);
+  }, [apiService, customer, warehouse, paybox, organization, priceType, items, clearOrder]);
 
   const handleCreateButtonClick = (conduct: boolean) => {
     setPendingAction(conduct ? "create_conduct" : "create");
@@ -433,25 +436,119 @@ const OrderForm: React.FC = () => {
           </Button>
         </Box>
 
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+        {/* Адаптивный Stepper - ВЕРСИЯ 1: Использовать только один Stepper */}
+        {!isMobile ? (
+          // Для десктопов и планшетов - горизонтальный Stepper
+          <Stepper 
+            activeStep={activeStep} 
+            sx={{ 
+              mb: 4,
+              overflowX: 'auto',
+              '& .MuiStep-root': {
+                minWidth: '100px',
+              },
+              '& .MuiStepLabel-label': {
+                fontSize: '0.8rem',
+                whiteSpace: 'nowrap',
+              }
+            }}
+          >
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        ) : (
+          // Для мобильных - упрощенный вариант
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            mb: 3,
+            '& > *': {
+              flexShrink: 0,
+            }
+          }}>
+            {steps.map((label, index) => (
+              <Box 
+                key={label}
+                sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center',
+                  mx: 0.5,
+                  flex: 1,
+                  minWidth: '60px',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    bgcolor: activeStep >= index ? 'primary.main' : 'grey.200',
+                    color: activeStep >= index ? 'white' : 'grey.700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    mb: 0.5,
+                    border: activeStep === index ? '2px solid' : 'none',
+                    borderColor: 'primary.main',
+                  }}
+                >
+                  {index + 1}
+                </Box>
+                <Typography 
+                  variant="caption" 
+                  align="center"
+                  sx={{
+                    fontSize: '0.65rem',
+                    fontWeight: activeStep === index ? 'bold' : 'normal',
+                    color: activeStep === index ? 'primary.main' : 'text.secondary',
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        )}
 
-        <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+        <Paper 
+          elevation={2} 
+          sx={{ 
+            p: isMobile ? 2 : 3, 
+            mb: 3,
+            overflow: 'auto',
+          }}
+        >
           {getStepContent(activeStep)}
         </Paper>
 
-        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Button disabled={activeStep === 0} onClick={handleBack}>
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-between",
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 2 : 0,
+        }}>
+          <Button 
+            disabled={activeStep === 0} 
+            onClick={handleBack}
+            fullWidth={isMobile}
+          >
             Назад
           </Button>
 
           {activeStep === steps.length - 1 ? (
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Box sx={{ 
+              display: "flex", 
+              gap: 2,
+              flexDirection: isMobile ? 'column' : 'row',
+              width: isMobile ? '100%' : 'auto',
+            }}>
               <Button
                 variant="contained"
                 color="primary"
@@ -465,6 +562,7 @@ const OrderForm: React.FC = () => {
                   !priceType ||
                   items.length === 0
                 }
+                fullWidth={isMobile}
               >
                 {isProcessing && pendingAction === "create" ? (
                   <CircularProgress size={24} color="inherit" />
@@ -485,6 +583,7 @@ const OrderForm: React.FC = () => {
                   !priceType ||
                   items.length === 0
                 }
+                fullWidth={isMobile}
               >
                 {isProcessing && pendingAction === "create_conduct" ? (
                   <CircularProgress size={24} color="inherit" />
@@ -502,6 +601,7 @@ const OrderForm: React.FC = () => {
                 (activeStep === 1 && (!warehouse || !paybox || !organization || !priceType)) ||
                 (activeStep === 2 && items.length === 0)
               }
+              fullWidth={isMobile}
             >
               Далее
             </Button>
@@ -510,7 +610,11 @@ const OrderForm: React.FC = () => {
       </Box>
 
       {/* Диалог подтверждения */}
-      <Dialog open={confirmDialogOpen} onClose={handleCloseConfirmDialog}>
+      <Dialog 
+        open={confirmDialogOpen} 
+        onClose={handleCloseConfirmDialog}
+        fullScreen={isMobile}
+      >
         <DialogTitle>Подтверждение</DialogTitle>
         <DialogContent>
           <Typography>
@@ -522,8 +626,16 @@ const OrderForm: React.FC = () => {
             После подтверждения будет создана продажа{ pendingAction === "create_conduct" && " и проведена" }.
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseConfirmDialog} disabled={isProcessing}>
+        <DialogActions sx={{ 
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 1 : 0,
+        }}>
+          <Button 
+            onClick={handleCloseConfirmDialog} 
+            disabled={isProcessing}
+            fullWidth={isMobile}
+            variant={isMobile ? "outlined" : "text"}
+          >
             Отмена
           </Button>
           <Button 
@@ -531,6 +643,7 @@ const OrderForm: React.FC = () => {
             variant="contained" 
             disabled={isProcessing}
             color={pendingAction === "create_conduct" ? "secondary" : "primary"}
+            fullWidth={isMobile}
           >
             {isProcessing ? (
               <CircularProgress size={24} color="inherit" />

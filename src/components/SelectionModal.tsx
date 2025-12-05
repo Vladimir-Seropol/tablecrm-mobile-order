@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -13,10 +13,10 @@ import {
   IconButton,
   TextField,
   InputAdornment,
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import CloseIcon from '@mui/icons-material/Close';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+} from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import CloseIcon from "@mui/icons-material/Close";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 interface SelectionModalProps {
   title: string;
@@ -36,12 +36,12 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   searchable = true,
 }) => {
   const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
-    setSearchTerm('');
+    setSearchTerm("");
   };
 
   const handleSelect = (item: any) => {
@@ -50,36 +50,36 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
   };
 
   const filteredItems = searchable
-    ? items.filter(item =>
+    ? items.filter((item) =>
         item[displayKey]?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : items;
 
   const getSecondaryText = (item: any) => {
     switch (title) {
-      case 'Счета':
-        return item.balance !== undefined ? `Баланс: ${item.balance} руб.` : '';
-      case 'Организации':
-        return item.type ? `Тип: ${item.type}` : '';
-      case 'Типы цен':
-        return item.tags?.length > 0 ? `Теги: ${item.tags.join(', ')}` : '';
-      case 'Склады':
-        return item.address || '';
+      case "Счета":
+        return item.balance !== undefined ? `Баланс: ${item.balance} руб.` : "";
+      case "Организации":
+        return item.type ? `Тип: ${item.type}` : "";
+      case "Типы цен":
+        return item.tags?.length > 0 ? `Теги: ${item.tags.join(", ")}` : "";
+      case "Склады":
+        return item.address || "";
       default:
-        return item.description || '';
+        return item.description || "";
     }
   };
 
   const getAdditionalInfo = (item: any) => {
     switch (title) {
-      case 'Счета':
-        return item.currency ? `Валюта: ${item.currency}` : '';
-      case 'Организации':
-        return item.inn ? `ИНН: ${item.inn}` : '';
-      case 'Склады':
-        return '';
+      case "Счета":
+        return item.currency ? `Валюта: ${item.currency}` : "";
+      case "Организации":
+        return item.inn ? `ИНН: ${item.inn}` : "";
+      case "Склады":
+        return "";
       default:
-        return '';
+        return "";
     }
   };
 
@@ -91,23 +91,21 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
         onClick={handleOpen}
         sx={{
           mb: 2,
-          justifyContent: 'space-between',
-          textTransform: 'none',
-          height: 'auto',
+          justifyContent: "space-between",
+          textTransform: "none",
+          height: "auto",
           minHeight: 56,
           py: 1.5,
         }}
       >
-        <Box sx={{ textAlign: 'left', flex: 1 }}>
-          <Typography variant="body1">
-            {title}
-          </Typography>
+        <Box sx={{ textAlign: "left", flex: 1 }}>
+          <Typography variant="body1">{title}</Typography>
           {selectedItem ? (
             <Box>
               <Typography
                 variant="body2"
                 color="primary"
-                sx={{ fontWeight: 'bold' }}
+                sx={{ fontWeight: "bold" }}
               >
                 {selectedItem[displayKey]}
               </Typography>
@@ -132,31 +130,31 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
         open={open}
         onClose={handleClose}
         sx={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "center",
           pt: 4,
         }}
       >
         <Paper
           sx={{
-            width: '95%',
+            width: "95%",
             maxWidth: 600,
-            maxHeight: '80vh',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
+            maxHeight: "80vh",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           <Box
             sx={{
               p: 2,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              borderBottom: '1px solid #e0e0e0',
-              bgcolor: 'background.paper',
-              position: 'sticky',
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderBottom: "1px solid #e0e0e0",
+              bgcolor: "background.paper",
+              position: "sticky",
               top: 0,
               zIndex: 1,
             }}
@@ -168,7 +166,7 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
           </Box>
 
           {searchable && (
-            <Box sx={{ p: 2, pb: 1, bgcolor: 'background.paper' }}>
+            <Box sx={{ p: 2, pb: 1, bgcolor: "background.paper" }}>
               <TextField
                 fullWidth
                 placeholder="Поиск..."
@@ -185,12 +183,12 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
             </Box>
           )}
 
-          <List sx={{ overflow: 'auto', flex: 1 }}>
+          <List sx={{ overflow: "auto", flex: 1 }}>
             {filteredItems.length === 0 ? (
               <ListItem>
                 <ListItemText
                   primary="Ничего не найдено"
-                  sx={{ textAlign: 'center', py: 2 }}
+                  sx={{ textAlign: "center", py: 2 }}
                 />
               </ListItem>
             ) : (
@@ -202,38 +200,60 @@ const SelectionModal: React.FC<SelectionModalProps> = ({
                       sx={{
                         py: 2,
                         px: 3,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
                       }}
                     >
-                      <Box sx={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body1" sx={{ fontWeight: selectedItem?.id === item.id ? 'bold' : 'normal' }}>
-                          {item[displayKey] || 'Без названия'}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          width: "100%",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            fontWeight:
+                              selectedItem?.id === item.id ? "bold" : "normal",
+                          }}
+                        >
+                          {item[displayKey] || "Без названия"}
                         </Typography>
                         {selectedItem?.id === item.id && (
                           <CheckCircleIcon color="primary" />
                         )}
                       </Box>
-                      
+
                       {getSecondaryText(item) && (
-                        <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
+                        <Typography
+                          variant="body2"
+                          color="textSecondary"
+                          sx={{ mt: 0.5 }}
+                        >
                           {getSecondaryText(item)}
                         </Typography>
                       )}
-                      
+
                       {getAdditionalInfo(item) && (
-                        <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5 }}>
+                        <Typography
+                          variant="caption"
+                          color="textSecondary"
+                          sx={{ mt: 0.5 }}
+                        >
                           {getAdditionalInfo(item)}
                         </Typography>
                       )}
-                      
-                      {/* Для счетов показываем ID если одинаковые названия */}
-                      {title === 'Счета' && filteredItems.filter(i => i.name === item.name).length > 1 && (
-                        <Typography variant="caption" color="textSecondary">
-                          ID: {item.id}
-                        </Typography>
-                      )}
+
+                      {title === "Счета" &&
+                        filteredItems.filter((i) => i.name === item.name)
+                          .length > 1 && (
+                          <Typography variant="caption" color="textSecondary">
+                            ID: {item.id}
+                          </Typography>
+                        )}
                     </ListItemButton>
                   </ListItem>
                   <Divider />
