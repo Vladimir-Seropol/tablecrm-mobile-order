@@ -436,9 +436,8 @@ const OrderForm: React.FC = () => {
           </Button>
         </Box>
 
-        {/* Адаптивный Stepper - ВЕРСИЯ 1: Использовать только один Stepper */}
         {!isMobile ? (
-          // Для десктопов и планшетов - горизонтальный Stepper
+
           <Stepper 
             activeStep={activeStep} 
             sx={{ 
@@ -460,7 +459,7 @@ const OrderForm: React.FC = () => {
             ))}
           </Stepper>
         ) : (
-          // Для мобильных - упрощенный вариант
+
           <Box sx={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
@@ -609,7 +608,6 @@ const OrderForm: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Диалог подтверждения */}
       <Dialog 
         open={confirmDialogOpen} 
         onClose={handleCloseConfirmDialog}
