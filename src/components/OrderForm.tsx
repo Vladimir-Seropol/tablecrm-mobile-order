@@ -64,7 +64,9 @@ const OrderForm: React.FC = () => {
   const [loadingError, setLoadingError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [pendingAction, setPendingAction] = useState<"create" | "create_conduct">("create");
+  const [pendingAction, setPendingAction] = useState<
+    "create" | "create_conduct"
+  >("create");
   const isProcessingRef = useRef(false);
 
   useEffect(() => {
@@ -98,7 +100,6 @@ const OrderForm: React.FC = () => {
         setPayboxes(payboxesData);
         setOrganizations(organizationsData);
         setPriceTypes(priceTypesData);
-        
       } catch (error: any) {
         console.error("Error fetching data:", error);
         setTokenValid(false);
@@ -157,80 +158,94 @@ const OrderForm: React.FC = () => {
     navigate("/");
   };
 
-  const handleCreateSale = useCallback(async (conduct: boolean) => {
-    if (isProcessingRef.current) {
-      console.warn("Продажа уже обрабатывается");
-      return;
-    }
-
-    if (
-      !apiService ||
-      !customer ||
-      !warehouse ||
-      !paybox ||
-      !organization ||
-      !priceType ||
-      items.length === 0
-    ) {
-      toast.error("Заполните все обязательные поля");
-      return;
-    }
-
-    isProcessingRef.current = true;
-    setIsProcessing(true);
-
-    const payload = {
-      customer_id: customer.id,
-      warehouse_id: warehouse.id,
-      paybox_id: paybox.id,
-      organization_id: organization.id,
-      price_type_id: priceType.id, 
-      items: items.map((item) => ({
-        product_id: item.product.id,
-        quantity: item.quantity,
-        price: item.product.price || 0,
-      })),
-    };
-
-    try {
-      await apiService.createSale(payload, conduct);
-      clearOrder();
-      setActiveStep(0);
-      toast.success(`Продажа успешно ${conduct ? 'создана и проведена' : 'создана'}!`);
-    } catch (error: any) {
-      console.error("Error creating sale:", error);
-      
-      let errorMessage = "Ошибка создания продажи";
-
-      if (error.response?.data?.detail) {
-        const errorDetails = error.response.data.detail;
-        
-        errorMessage += ": ";
-        const errors = errorDetails.map((detail: any, index: number) => {
-          let msg = detail.msg;
-          if (detail.loc && detail.loc.length > 0) {
-            const fieldPath = detail.loc.join(".");
-            msg += ` (поле: ${fieldPath})`;
-          }
-          return `${index + 1}. ${msg}`;
-        });
-
-        errorMessage += errors.join("; ");
-      } else if (error.response?.data?.message) {
-        errorMessage += `: ${error.response.data.message}`;
-      } else if (error.message) {
-        errorMessage += `: ${error.message}`;
-      } else {
-        errorMessage += ": Неизвестная ошибка";
+  const handleCreateSale = useCallback(
+    async (conduct: boolean) => {
+      if (isProcessingRef.current) {
+        console.warn("Продажа уже обрабатывается");
+        return;
       }
-      
-      toast.error(errorMessage);
-    } finally {
-      setIsProcessing(false);
-      isProcessingRef.current = false;
-      setConfirmDialogOpen(false);
-    }
-  }, [apiService, customer, warehouse, paybox, organization, priceType, items, clearOrder]);
+
+      if (
+        !apiService ||
+        !customer ||
+        !warehouse ||
+        !paybox ||
+        !organization ||
+        !priceType ||
+        items.length === 0
+      ) {
+        toast.error("Заполните все обязательные поля");
+        return;
+      }
+
+      isProcessingRef.current = true;
+      setIsProcessing(true);
+
+      const payload = {
+        customer_id: customer.id,
+        warehouse_id: warehouse.id,
+        paybox_id: paybox.id,
+        organization_id: organization.id,
+        price_type_id: priceType.id,
+        items: items.map((item) => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price || 0,
+        })),
+      };
+
+      try {
+        await apiService.createSale(payload, conduct);
+        clearOrder();
+        setActiveStep(0);
+        toast.success(
+          `Продажа успешно ${conduct ? "создана и проведена" : "создана"}!`
+        );
+      } catch (error: any) {
+        console.error("Error creating sale:", error);
+
+        let errorMessage = "Ошибка создания продажи";
+
+        if (error.response?.data?.detail) {
+          const errorDetails = error.response.data.detail;
+
+          errorMessage += ": ";
+          const errors = errorDetails.map((detail: any, index: number) => {
+            let msg = detail.msg;
+            if (detail.loc && detail.loc.length > 0) {
+              const fieldPath = detail.loc.join(".");
+              msg += ` (поле: ${fieldPath})`;
+            }
+            return `${index + 1}. ${msg}`;
+          });
+
+          errorMessage += errors.join("; ");
+        } else if (error.response?.data?.message) {
+          errorMessage += `: ${error.response.data.message}`;
+        } else if (error.message) {
+          errorMessage += `: ${error.message}`;
+        } else {
+          errorMessage += ": Неизвестная ошибка";
+        }
+
+        toast.error(errorMessage);
+      } finally {
+        setIsProcessing(false);
+        isProcessingRef.current = false;
+        setConfirmDialogOpen(false);
+      }
+    },
+    [
+      apiService,
+      customer,
+      warehouse,
+      paybox,
+      organization,
+      priceType,
+      items,
+      clearOrder,
+    ]
+  );
 
   const handleCreateButtonClick = (conduct: boolean) => {
     setPendingAction(conduct ? "create_conduct" : "create");
@@ -369,33 +384,89 @@ const OrderForm: React.FC = () => {
               ) : (
                 <>
                   <List>
-                    {items.map((item) => (
-                      <ListItem
-                        key={item.product.id}
-                        secondaryAction={
-                          <Typography variant="body1">
-                            {item.quantity} × {item.product.price || 0} ={" "}
-                            {item.quantity * (item.product.price || 0)} руб.
-                          </Typography>
-                        }
-                      >
-                        <ListItemText
-                          primary={item.product.name}
-                          secondary={
-                            <React.Fragment>
+                    {items.map((item) => {
+                      const itemTotal =
+                        item.quantity * (item.product.price || 0);
+
+                      return (
+                        <ListItem
+                          key={item.product.id}
+                          sx={{
+                            flexDirection: { xs: "column", sm: "row" },
+                            alignItems: { xs: "flex-start", sm: "center" },
+                            py: 1.5,
+                          }}
+                        >
+                          <Box
+                            sx={{ flex: 1, minWidth: 0, mb: { xs: 1, sm: 0 } }}
+                          >
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                fontWeight: 500,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                mb: 0.5,
+                              }}
+                            >
+                              {item.product.name}
+                            </Typography>
+                            {item.product.article && (
                               <Typography
-                                component="span"
                                 variant="body2"
-                                color="textSecondary"
+                                color="text.secondary"
+                                sx={{
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
                               >
-                                {item.product.article &&
-                                  `Арт: ${item.product.article}`}
+                                Арт: {item.product.article}
                               </Typography>
-                            </React.Fragment>
-                          }
-                        />
-                      </ListItem>
-                    ))}
+                            )}
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: { xs: "flex-start", sm: "center" },
+                              justifyContent: {
+                                xs: "space-between",
+                                sm: "flex-end",
+                              },
+                              width: { xs: "100%", sm: "auto" },
+                              flexShrink: 0,
+                              flexDirection: { xs: "row", sm: "column" },
+                              gap: { xs: 1, sm: 0.5 },
+                              textAlign: { xs: "right", sm: "right" },
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{
+                                order: { xs: 2, sm: 1 },
+                                fontSize: { xs: "0.875rem", sm: "0.75rem" },
+                              }}
+                            >
+                              {item.quantity} × {item.product.price || 0} руб.
+                            </Typography>
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                fontWeight: 500,
+                                order: { xs: 1, sm: 2 },
+                                minWidth: { xs: 80, sm: "auto" },
+                                fontSize: { xs: "0.95rem", sm: "1rem" },
+                              }}
+                            >
+                              = {itemTotal} руб.
+                            </Typography>
+                          </Box>
+                        </ListItem>
+                      );
+                    })}
                   </List>
                   <Divider sx={{ my: 2 }} />
                   <Typography variant="h6" align="right">
@@ -437,19 +508,18 @@ const OrderForm: React.FC = () => {
         </Box>
 
         {!isMobile ? (
-
-          <Stepper 
-            activeStep={activeStep} 
-            sx={{ 
+          <Stepper
+            activeStep={activeStep}
+            sx={{
               mb: 4,
-              overflowX: 'auto',
-              '& .MuiStep-root': {
-                minWidth: '100px',
+              overflowX: "auto",
+              "& .MuiStep-root": {
+                minWidth: "100px",
               },
-              '& .MuiStepLabel-label': {
-                fontSize: '0.8rem',
-                whiteSpace: 'nowrap',
-              }
+              "& .MuiStepLabel-label": {
+                fontSize: "0.8rem",
+                whiteSpace: "nowrap",
+              },
             }}
           >
             {steps.map((label) => (
@@ -459,53 +529,55 @@ const OrderForm: React.FC = () => {
             ))}
           </Stepper>
         ) : (
-
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            mb: 3,
-            '& > *': {
-              flexShrink: 0,
-            }
-          }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              mb: 3,
+              "& > *": {
+                flexShrink: 0,
+              },
+            }}
+          >
             {steps.map((label, index) => (
-              <Box 
+              <Box
                 key={label}
-                sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center',
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
                   mx: 0.5,
                   flex: 1,
-                  minWidth: '60px',
+                  minWidth: "60px",
                 }}
               >
                 <Box
                   sx={{
                     width: 28,
                     height: 28,
-                    borderRadius: '50%',
-                    bgcolor: activeStep >= index ? 'primary.main' : 'grey.200',
-                    color: activeStep >= index ? 'white' : 'grey.700',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold',
+                    borderRadius: "50%",
+                    bgcolor: activeStep >= index ? "primary.main" : "grey.200",
+                    color: activeStep >= index ? "white" : "grey.700",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "0.75rem",
+                    fontWeight: "bold",
                     mb: 0.5,
-                    border: activeStep === index ? '2px solid' : 'none',
-                    borderColor: 'primary.main',
+                    border: activeStep === index ? "2px solid" : "none",
+                    borderColor: "primary.main",
                   }}
                 >
                   {index + 1}
                 </Box>
-                <Typography 
-                  variant="caption" 
+                <Typography
+                  variant="caption"
                   align="center"
                   sx={{
-                    fontSize: '0.65rem',
-                    fontWeight: activeStep === index ? 'bold' : 'normal',
-                    color: activeStep === index ? 'primary.main' : 'text.secondary',
+                    fontSize: "0.65rem",
+                    fontWeight: activeStep === index ? "bold" : "normal",
+                    color:
+                      activeStep === index ? "primary.main" : "text.secondary",
                     lineHeight: 1.1,
                   }}
                 >
@@ -516,25 +588,27 @@ const OrderForm: React.FC = () => {
           </Box>
         )}
 
-        <Paper 
-          elevation={2} 
-          sx={{ 
-            p: isMobile ? 2 : 3, 
+        <Paper
+          elevation={2}
+          sx={{
+            p: isMobile ? 2 : 3,
             mb: 3,
-            overflow: 'auto',
+            overflow: "auto",
           }}
         >
           {getStepContent(activeStep)}
         </Paper>
 
-        <Box sx={{ 
-          display: "flex", 
-          justifyContent: "space-between",
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? 2 : 0,
-        }}>
-          <Button 
-            disabled={activeStep === 0} 
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            flexDirection: isMobile ? "column" : "row",
+            gap: isMobile ? 2 : 0,
+          }}
+        >
+          <Button
+            disabled={activeStep === 0}
             onClick={handleBack}
             fullWidth={isMobile}
           >
@@ -542,12 +616,14 @@ const OrderForm: React.FC = () => {
           </Button>
 
           {activeStep === steps.length - 1 ? (
-            <Box sx={{ 
-              display: "flex", 
-              gap: 2,
-              flexDirection: isMobile ? 'column' : 'row',
-              width: isMobile ? '100%' : 'auto',
-            }}>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexDirection: isMobile ? "column" : "row",
+                width: isMobile ? "100%" : "auto",
+              }}
+            >
               <Button
                 variant="contained"
                 color="primary"
@@ -597,7 +673,8 @@ const OrderForm: React.FC = () => {
               onClick={handleNext}
               disabled={
                 (activeStep === 0 && (!tokenValid || loading || !customer)) ||
-                (activeStep === 1 && (!warehouse || !paybox || !organization || !priceType)) ||
+                (activeStep === 1 &&
+                  (!warehouse || !paybox || !organization || !priceType)) ||
                 (activeStep === 2 && items.length === 0)
               }
               fullWidth={isMobile}
@@ -608,37 +685,40 @@ const OrderForm: React.FC = () => {
         </Box>
       </Box>
 
-      <Dialog 
-        open={confirmDialogOpen} 
+      <Dialog
+        open={confirmDialogOpen}
         onClose={handleCloseConfirmDialog}
         fullScreen={isMobile}
       >
         <DialogTitle>Подтверждение</DialogTitle>
         <DialogContent>
           <Typography>
-            {pendingAction === "create_conduct" 
-              ? "Вы уверены, что хотите создать и провести продажу?" 
+            {pendingAction === "create_conduct"
+              ? "Вы уверены, что хотите создать и провести продажу?"
               : "Вы уверены, что хотите создать продажу?"}
           </Typography>
           <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-            После подтверждения будет создана продажа{ pendingAction === "create_conduct" && " и проведена" }.
+            После подтверждения будет создана продажа
+            {pendingAction === "create_conduct" && " и проведена"}.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ 
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? 1 : 0,
-        }}>
-          <Button 
-            onClick={handleCloseConfirmDialog} 
+        <DialogActions
+          sx={{
+            flexDirection: isMobile ? "column" : "row",
+            gap: isMobile ? 1 : 0,
+          }}
+        >
+          <Button
+            onClick={handleCloseConfirmDialog}
             disabled={isProcessing}
             fullWidth={isMobile}
             variant={isMobile ? "outlined" : "text"}
           >
             Отмена
           </Button>
-          <Button 
-            onClick={handleConfirmAction} 
-            variant="contained" 
+          <Button
+            onClick={handleConfirmAction}
+            variant="contained"
             disabled={isProcessing}
             color={pendingAction === "create_conduct" ? "secondary" : "primary"}
             fullWidth={isMobile}
