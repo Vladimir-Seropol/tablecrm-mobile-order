@@ -322,11 +322,16 @@ const CustomerSearch: React.FC = () => {
                       <ListItemText
                         primary={cust.name}
                         secondary={
-                          <React.Fragment>
-                            {" "}
-                            {cust.phone && <span>📞 {cust.phone}</span>}
-                            {cust.email && <span> • ✉️ {cust.email}</span>}
-                          </React.Fragment>
+                          <Typography
+                            component="span"
+                            variant="body2"
+                            color="textSecondary"
+                            sx={{ display: "inline-block" }}
+                          >
+                            {cust.phone && `📞 ${cust.phone}`}
+                            {cust.phone && cust.email && " • "}
+                            {cust.email && `✉️ ${cust.email}`}
+                          </Typography>
                         }
                       />
                     </ListItemButton>
@@ -457,25 +462,20 @@ const CustomerSearch: React.FC = () => {
                                 </Typography>
                               }
                               secondary={
-                                <React.Fragment>
-                                  {" "}
-                                  {cust.phone && (
-                                    <Typography
-                                      variant="body2"
-                                      color="textSecondary"
-                                    >
-                                      📞 {cust.phone}
-                                    </Typography>
-                                  )}
+                                <Typography
+                                  component="span"
+                                  variant="body2"
+                                  color="textSecondary"
+                                  sx={{ display: "block" }}
+                                >
+                                  {cust.phone && `📞 ${cust.phone}`}
                                   {cust.email && (
-                                    <Typography
-                                      variant="body2"
-                                      color="textSecondary"
-                                    >
+                                    <>
+                                      <br />
                                       ✉️ {cust.email}
-                                    </Typography>
+                                    </>
                                   )}
-                                </React.Fragment>
+                                </Typography>
                               }
                             />
                           </ListItemButton>
